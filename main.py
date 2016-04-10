@@ -8,14 +8,6 @@ import sys
 if not os.geteuid() == 0:
 	sys.exit('Script must be run as root')
 
-# Downloading and setting up listusers
-if os.path.isfile("/usr/bin/listusers"):
-	print("Skipping download");
-else:
-	print("Downloading and installing necessary script");
-	os.system("wget 'https://www.dropbox.com/s/nq18r6d9e3b3udc/listusers'");
-	os.system("chmod +x listusers");
-
 # This is the actual program
 authUsers=[];
 authAdmins=[];
