@@ -1,6 +1,8 @@
 # userManager
 This is a basic script I wrote in python to allow quickly managing user accounts
 
+*NOTE: This script is being converted to bash and will not recieve any updates until that is done, but I will add new features while that is happening.
+
 Features:
 	
 	List all exisiting users
