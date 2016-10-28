@@ -36,6 +36,7 @@ for i in $(cat users.txt); do
 		read reply
 		if [[ $reply == "y" ]]; then
 			userdel $i
+			groupdel $i
 		fi
 	fi
 	if echo ${authAdmins[*]} | grep $i; then
@@ -45,6 +46,7 @@ for i in $(cat users.txt); do
 		read reply
 		if [[ $reply == "y" ]]; then
 			userdel $i
+			groupdel $i
 		fi
 	fi
 done
@@ -99,5 +101,55 @@ if [[ $reply == "y" ]]; then
 	elif [ -f /usr/share/lightdm/lightdm.conf.d/50-unity-greeter.conf ]; then
 		echo allow-guest=false >> /etc/lightdm/lightdm.conf.d/50-unity-greeter.conf
 		restart lightdm
+	else
+		echo "I don't know how"
 	fi	
 fi
+
+echo "Permit remote root login? (y/n)"
+read reply
+if [[ $reply == "y" ]]; then
+	if grep "PermitRootLogin" /etc/ssh/sshd_config; then
+		sed -i -E "PermitRootLogin.*/PermitRootLogin no/" /etc/ssh/sshd_config
+	else
+		echo "PermitRootLogin no" >> /etc/ssh/sshd_config
+	fi
+fi
+
+echo "Enable auto updates? (y/n)"
+read reply
+if [[ $reply == "y" ]]; then
+	if [ -f /etc/apt/apt.conf.d/10periodic ]; then
+		sed -i -E "s/APT::Periodic::Update-Package-Lists.*/APT::Periodic::Update-Package-Lists 1/"
+		sed -i -E "/APT::Periodic::Download-Upgradeable-Packages.*/APT::Periodic::Download-Upgradeable-Packages 1/"
+	else
+		echo "I don't know how"
+	fi
+fi
+
+echo "Firewall? (y/n)"
+read reply
+if [[ $reply == "y" ]]; then
+	echo "Block ssh? (y/n)"
+	read reply
+	if [[ $reply == "y" ]]; then
+		ufw disallow ssh
+	else
+		ufw allow ssh
+	fi
+	ufw enable
+	sysctl -n net.ipv4.tcp_syncookies
+fi
+
+apt-get install curl -y
+if lsb_release -a | grep "12.04"; then
+	curl https://repogen.simplylinux.ch/txt/precise/sources_bba61f3485a81e38a79ac3f6ecc2b76c6a9badbe.txt | sudo tee /etc/apt/sources.list
+elif lsb_release -a | grep "14.04"; then
+	curl https://repogen.simplylinux.ch/txt/yakkety/sources_024c14347186a4e6e152f4457d7e66bec553bc8d.txt | sudo tee /etc/apt/sources.list
+elif lsb_release -a | grep "16.04"; then
+	curl https://repogen.simplylinux.ch/txt/xenial/sources_3dc5770f0c6f81ac011ad9525ef566915636d0be.txt | sudo tee /etc/apt/sources.list
+elif lsb_release -a | grep "16.10"; then
+	curl https://repogen.simplylinux.ch/txt/yakkety/sources_024c14347186a4e6e152f4457d7e66bec553bc8d.txt | sudo tee /etc/apt/sources.list
+fi
+apt-get update
+apt-get upgrade -y
