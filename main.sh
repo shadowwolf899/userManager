@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root"
   exit 1
@@ -29,17 +29,7 @@ do
 done
 
 for i in $(cat users.txt); do
-	if echo ${authUsers[*]} | grep $i; then
-		echo "$i AUTHORIZED"
-	else
-		echo "DELETE $i (y/n):"
-		read reply
-		if [[ $reply == "y" ]]; then
-			userdel $i
-			groupdel $i
-		fi
-	fi
-	if echo ${authAdmins[*]} | grep $i; then
+	if echo ${authUsers[*]} | grep $i || echo ${authAdmins[*]} | grep $i; then
 		echo "$i AUTHORIZED"
 	else
 		echo "DELETE $i (y/n):"
@@ -57,27 +47,30 @@ read adPass
 echo "Enter user password:"
 read usPass
 
-for i in $(seq 0 1 ${#authAdmins[*]}); do
-	usermod -a -G wheel ${authAdmins[$i]}
-	echo ${authAdmins[$i]}:$adPass | chpasswd
+for i in ${authAdmins[*]}; do
+	usermod -a -G wheel $i
+	usermod -a -G sudo $i
+	echo "CHANGING PASSWORD FOR "$i
+	echo $i:$adPass | chpasswd
 done
-for i in $(seq 0 1 ${#authUsers[*]}); do
-	usermod -G ${authUsers[$i]} ${authUsers[$i]}
-	echo ${authUsers[$i]}:$usPass | chpasswd
+for i in ${authUsers[*]}; do
+	usermod -G $i $i
+	echo "CHANGING PASSWORD FOR "$i
+	echo $i:$usPass | chpasswd
 done
 
 echo "Set default password policies? (y/n)"
 read reply
 if [[ $reply == "y" ]]; then
 	echo "Setting minimum length and how many passwords to remember . . ."
-	sed -i -E "s/pam_unix.so/pam_unix.so remember=5 minlen=8" /etc/pam.d/common-password
+	sed -i "s/pam_unix.so/pam_unix.so remember=5 minlen=8/" /etc/pam.d/common-password
 	echo "Setting password requirements . . ."
-	sed -i -E 's/pam_cracklib.so/pam_cracklib.so ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1' /etc/pam.d/common-pass
+	sed -i 's/pam_cracklib.so/pam_cracklib.so ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1/' /etc/pam.d/common-password
 	echo "Setting password age requirements . . ."
 	sed -i -E "s/PASS_MAX_DAYS.*/PASS_MAX_DAYS 90/" /etc/login.defs
 	sed -i -E "s/PASS_MIN_DAYS.*/PASS_MIN_DAYS 10/" /etc/login.defs
 	sed -i -E "s/PASS_WARN_AGE.*/PASS_WARN_AGE 7/" /etc/login.defs
-	echo "auth required pam_tally2.so deny=5 onerr=fail unlock_time=1800" >> /etc/pamd./common-auth
+	echo "auth required pam_tally2.so deny=5 onerr=fail unlock_time=1800" >> /etc/pam.d/common-auth
 fi
 
 echo "Lock root? (y/n)"
@@ -120,8 +113,8 @@ echo "Enable auto updates? (y/n)"
 read reply
 if [[ $reply == "y" ]]; then
 	if [ -f /etc/apt/apt.conf.d/10periodic ]; then
-		sed -i -E "s/APT::Periodic::Update-Package-Lists.*/APT::Periodic::Update-Package-Lists 1/"
-		sed -i -E "/APT::Periodic::Download-Upgradeable-Packages.*/APT::Periodic::Download-Upgradeable-Packages 1/"
+		sed -i -E "s/APT::Periodic::Update-Package-Lists.*/APT::Periodic::Update-Package-Lists \"1\";/" /etc/apt/apt.conf.d/10periodic 
+		sed -i -E "s/APT::Periodic::Download-Upgradeable-Packages.*/APT::Periodic::Download-Upgradeable-Packages \"1\";/" /etc/apt/apt.conf.d/10periodic
 	else
 		echo "I don't know how"
 	fi
@@ -133,7 +126,7 @@ if [[ $reply == "y" ]]; then
 	echo "Block ssh? (y/n)"
 	read reply
 	if [[ $reply == "y" ]]; then
-		ufw disallow ssh
+		ufw deny ssh
 	else
 		ufw allow ssh
 	fi
@@ -153,3 +146,5 @@ elif lsb_release -a | grep "16.10"; then
 fi
 apt-get update
 apt-get upgrade -y
+
+echo "Remember to restart"
