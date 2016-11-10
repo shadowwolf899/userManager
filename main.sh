@@ -4,8 +4,12 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
-echo "You should run this in tmux, else you will lose your progress"
-
+if echo $TERM | grep "screen"; then
+	echo "All good" > /dev/null
+else
+	echo "You should run this in tmux, else you will lose your progress"
+	exit 2
+fi
 echo "USERS:"
 ./listusers
 echo
@@ -89,7 +93,7 @@ if [[ $reply == "y" ]]; then
 		echo allow-guest=false >> /etc/lightdm/lightdm.conf
 		restart lightdm
 	elif [ -f /usr/share/lightdm/lightdm.conf/50-ubuntu.conf ]; then
-		echo allow-guest=false >> /usr/share/lightdm/lightdm/conf/50-ubuntu.conf
+		echo allow-guest=false >> /usr/share/lightdm/lightdm.conf/50-ubuntu.conf 
 		restart lightdm
 	elif [ -f /etc/lightdm/lightdm.conf.d/50-unity-greeter.conf ]; then
 		echo allow-guest=false >> /etc/lightdm/lightdm.conf.d/50-unity-greeter.conf
