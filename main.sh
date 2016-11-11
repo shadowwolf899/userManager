@@ -89,21 +89,11 @@ fi
 echo "Remove guest? (y/n)"
 read reply
 if [[ $reply == "y" ]]; then
-	if [ -f /etc/lightdm/ligtdm.conf ]; then
-		echo allow-guest=false >> /etc/lightdm/lightdm.conf
-		restart lightdm
-	elif [ -f /usr/share/lightdm/lightdm.conf/50-ubuntu.conf ]; then
-		echo allow-guest=false >> /usr/share/lightdm/lightdm.conf/50-ubuntu.conf 
-		restart lightdm
-	elif [ -f /etc/lightdm/lightdm.conf.d/50-unity-greeter.conf ]; then
-		echo allow-guest=false >> /etc/lightdm/lightdm.conf.d/50-unity-greeter.conf
-		restart lightdm
-	elif [ -f /usr/share/lightdm/lightdm.conf.d/50-unity-greeter.conf ]; then
-		echo allow-guest=false >> /etc/lightdm/lightdm.conf.d/50-unity-greeter.conf
-		restart lightdm
+	if grep "allow-guest=false" /usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf; then
+		echo "Already set"
 	else
-		echo "I don't know how"
-	fi	
+		echo "allow-guest=false" >> /usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf 
+		upstart restart lightdm
 fi
 
 echo "Permit remote root login? (y/n)"
