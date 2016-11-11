@@ -93,7 +93,8 @@ if [[ $reply == "y" ]]; then
 		echo "Already set"
 	else
 		echo "allow-guest=false" >> /usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf 
-		upstart restart lightdm
+		service lightdm restart
+	fi
 fi
 
 echo "Permit remote root login? (y/n)"
