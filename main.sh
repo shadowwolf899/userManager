@@ -4,7 +4,7 @@ if [ "$EUID" -ne 0 ]
   exit 1
 fi
 
-if echo $TERM | grep "screen"; then
+if echo $TERM | grep "screen" > /dev/null; then
 	echo "All good" > /dev/null
 else
 	echo "You should run this in tmux, else you will lose your progress"
@@ -36,10 +36,10 @@ do
 done
 
 for i in $(cat users.txt); do
-	if echo ${authUsers[*]} | grep $i || echo ${authAdmins[*]} | grep $i; then
+	if echo ${authUsers[*]} | grep $i > /dev/null || echo ${authAdmins[*]} | grep $i > /dev/null; then
 		echo "$i AUTHORIZED"
 	else
-		echo "DELETE $i (y/n):"
+		echo "DELETE $i (y/N):"
 		read reply
 		if [[ $reply == "y" ]]; then
 			userdel $i
@@ -48,25 +48,70 @@ for i in $(cat users.txt); do
 	fi
 done
 
-echo "Enter admin password:"
-read adPass
-
-echo "Enter user password:"
-read usPass
+for i in ${authUsers[*]}; do
+	if echo $(cat users.txt) | grep $i > /dev/null; then
+		echo "$i AUTHORIZED" > /dev/null
+	else
+		echo "MAKE $i? (y/N)"
+		read reply
+		if [[ $reply == "y" ]]; then
+			useradd $i
+		fi
+	fi
+done
 
 for i in ${authAdmins[*]}; do
-	usermod -a -G wheel $i
-	usermod -a -G sudo $i
-	echo "CHANGING PASSWORD FOR "$i
-	echo $i:$adPass | chpasswd
-done
-for i in ${authUsers[*]}; do
-	usermod -G $i $i
-	echo "CHANGING PASSWORD FOR "$i
-	echo $i:$usPass | chpasswd
+	if echo $(cat users.txt) | grep $i > /dev/null; then
+		echo "$i AUTHORIZED" > /dev/null
+	else
+		echo "MAKE $i (admin)? (y/N)"
+		read reply
+		if [[ $reply == "y" ]]; then
+			useradd $i
+			usermod -a -G sudo $i
+			usermod -a -G wheel $i
+		fi
+	fi
 done
 
-echo "Set default password policies? (y/n)"
+echo "Change passwords? (y/N)"
+read reply
+if [[ $reply == "y" ]]; then
+	echo "Unique passwords per user? (y/N)"
+	read reply
+	if [[ $reply == "y" ]]; then
+		for i in ${authAdmins[*]}; do
+			echo $i
+			read pass
+			echo $i:$pass | chpasswd
+		done
+		for i in ${authUsers[*]}; do
+			echo $i
+			read pass
+			echo $i:$pass | chpasswd
+		done
+	else
+		echo "Enter admin password:"
+		read adPass
+
+		echo "Enter user password:"
+		read usPass
+
+		for i in ${authAdmins[*]}; do
+			usermod -a -G wheel $i
+			usermod -a -G sudo $i
+			echo "CHANGING PASSWORD FOR "$i
+			echo $i:$adPass | chpasswd
+		done
+		for i in ${authUsers[*]}; do
+			usermod -G $i $i
+			echo "CHANGING PASSWORD FOR "$i
+			echo $i:$usPass | chpasswd
+		done
+	fi
+fi
+
+echo "Set default password policies? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
 	echo "Setting minimum length and how many passwords to remember . . ."
@@ -80,57 +125,59 @@ if [[ $reply == "y" ]]; then
 	echo "auth required pam_tally2.so deny=5 onerr=fail unlock_time=1800" >> /etc/pam.d/common-auth
 fi
 
-echo "Lock root? (y/n)"
+echo "Lock root? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
 	passwd -l root
+else
+	passwd -u root
 fi
 
-echo "Remove guest? (y/n)"
+echo "Remove guest? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
-	if [ -f /etc/lightdm/ligtdm.conf ]; then
-		echo allow-guest=false >> /etc/lightdm/lightdm.conf
-		restart lightdm
-	elif [ -f /usr/share/lightdm/lightdm.conf/50-ubuntu.conf ]; then
-		echo allow-guest=false >> /usr/share/lightdm/lightdm.conf/50-ubuntu.conf 
-		restart lightdm
-	elif [ -f /etc/lightdm/lightdm.conf.d/50-unity-greeter.conf ]; then
-		echo allow-guest=false >> /etc/lightdm/lightdm.conf.d/50-unity-greeter.conf
-		restart lightdm
-	elif [ -f /usr/share/lightdm/lightdm.conf.d/50-unity-greeter.conf ]; then
-		echo allow-guest=false >> /etc/lightdm/lightdm.conf.d/50-unity-greeter.conf
-		restart lightdm
+	if grep "allow-guest=false" /usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf > /dev/null; then
+		echo "Already set"
+	elif grep "allow-guest" /usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf > /dev/null; then
+		sed -i -E "s/allow-guest.*/allow-guest=false/" /usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf
+		service lightdm restart
 	else
-		echo "I don't know how"
-	fi	
+		echo "allow-guest=false" >> /usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf 
+		service lightdm restart
+	fi
 fi
 
-echo "Permit remote root login? (y/n)"
+echo "Permit remote root login? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
-	if grep "PermitRootLogin" /etc/ssh/sshd_config; then
-		sed -i -E "PermitRootLogin.*/PermitRootLogin no/" /etc/ssh/sshd_config
+	if grep "PermitRootLogin" /etc/ssh/sshd_config > /dev/null; then
+		sed -i -E "s/PermitRootLogin.*/PermitRootLogin yes/" /etc/ssh/sshd_config
+	else
+		echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+	fi
+else
+	if grep "PermitRootLogin" /etc/ssh/sshd_config > /dev/null; then
+		sed -i -E "s/PermitRootLogin.*/PermitRootLogin no/" /etc/ssh/sshd_config
 	else
 		echo "PermitRootLogin no" >> /etc/ssh/sshd_config
 	fi
 fi
 
-echo "Enable auto updates? (y/n)"
+echo "Enable auto updates? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
 	if [ -f /etc/apt/apt.conf.d/10periodic ]; then
-		sed -i -E "s/APT::Periodic::Update-Package-Lists.*/APT::Periodic::Update-Package-Lists \"1\";/" /etc/apt/apt.conf.d/10periodic 
-		sed -i -E "s/APT::Periodic::Download-Upgradeable-Packages.*/APT::Periodic::Download-Upgradeable-Packages \"1\";/" /etc/apt/apt.conf.d/10periodic
+		sed -i -E "s/Update-Package-Lists.*/Update-Package-Lists \"1\"\;/" /etc/apt/apt.conf.d/10periodic
+		sed -i -E "s/Download-Upgradeable-Packages.*/Download-Upgradeable-Packages \"1\"\;/" /etc/apt/apt.conf.d/10periodic
 	else
 		echo "I don't know how"
 	fi
 fi
 
-echo "Firewall? (y/n)"
+echo "Firewall? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
-	echo "Block ssh? (y/n)"
+	echo "Block ssh? (y/N)"
 	read reply
 	if [[ $reply == "y" ]]; then
 		ufw deny ssh
@@ -139,19 +186,36 @@ if [[ $reply == "y" ]]; then
 	fi
 	ufw enable
 	sysctl -n net.ipv4.tcp_syncookies
+else
+	ufw disable
 fi
 
-apt-get install curl -y
-if lsb_release -a | grep "12.04"; then
-	curl https://repogen.simplylinux.ch/txt/precise/sources_bba61f3485a81e38a79ac3f6ecc2b76c6a9badbe.txt | sudo tee /etc/apt/sources.list
-elif lsb_release -a | grep "14.04"; then
-	curl https://repogen.simplylinux.ch/txt/yakkety/sources_024c14347186a4e6e152f4457d7e66bec553bc8d.txt | sudo tee /etc/apt/sources.list
-elif lsb_release -a | grep "16.04"; then
-	curl https://repogen.simplylinux.ch/txt/xenial/sources_3dc5770f0c6f81ac011ad9525ef566915636d0be.txt | sudo tee /etc/apt/sources.list
-elif lsb_release -a | grep "16.10"; then
-	curl https://repogen.simplylinux.ch/txt/yakkety/sources_024c14347186a4e6e152f4457d7e66bec553bc8d.txt | sudo tee /etc/apt/sources.list
+echo "New sources.list? (y/N)"
+read reply
+if [[ $reply == "y" ]]; then
+	apt-get install curl -y
+	if lsb_release -a | grep "12.04" > /dev/null; then
+		curl https://repogen.simplylinux.ch/txt/precise/sources_bba61f3485a81e38a79ac3f6ecc2b76c6a9badbe.txt | sudo tee /etc/apt/sources.list
+	elif lsb_release -a | grep "14.04" > /dev/null; then
+		curl https://repogen.simplylinux.ch/txt/yakkety/sources_024c14347186a4e6e152f4457d7e66bec553bc8d.txt | sudo tee /etc/apt/sources.list
+	elif lsb_release -a | grep "16.04" > /dev/null; then
+		curl https://repogen.simplylinux.ch/txt/xenial/sources_3dc5770f0c6f81ac011ad9525ef566915636d0be.txt | sudo tee /etc/apt/sources.list
+	elif lsb_release -a | grep "16.10" > /dev/null; then
+		curl https://repogen.simplylinux.ch/txt/yakkety/sources_024c14347186a4e6e152f4457d7e66bec553bc8d.txt | sudo tee /etc/apt/sources.list
+	fi
 fi
-apt-get update
-apt-get upgrade -y
 
-echo "Remember to restart"
+echo "Perform updates? (y/N)"
+read reply
+if [[ $reply == "y" ]]; then
+	apt-get update
+	apt-get upgrade -y
+fi
+
+echo "Reboot now? (y/N)"
+read reply
+if [[ $reply == "y" ]]; then
+	reboot
+else
+	echo "Remember to restart at somepoint"
+fi
