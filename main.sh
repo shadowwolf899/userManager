@@ -48,6 +48,36 @@ for i in $(cat users.txt); do
 	fi
 done
 
+for i in ${authUsers[*]}; do
+	if echo $(cat users.txt) | grep $i > /dev/null; then
+		echo "$i AUTHORIZED" > /dev/null
+	else
+		echo "MAKE $i? (y/N)"
+		read reply
+		if [[ $reply == "y" ]]; then
+			useradd $i
+		fi
+	fi
+done
+
+for i in ${authAdmins[*]}; do
+	if echo $(cat users.txt) | grep $i > /dev/null; then
+		echo "$i AUTHORIZED" > /dev/null
+	else
+		echo "MAKE $i (admin)? (y/N)"
+		read reply
+		if [[ $reply == "y" ]]; then
+			useradd $i
+			if grep "sudo" /etc/group > /dev/null; then
+				usermod -a -G sudo $i
+			fi
+			if grep "wheel" /etc/group > /dev/null; then
+				usermod -a -G wheel $i
+			if
+		fi
+	fi
+done
+
 echo "Change passwords? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
