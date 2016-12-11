@@ -184,10 +184,31 @@ if [[ $reply == "y" ]]; then
 	else
 		ufw allow ssh
 	fi
+	echo "Block ftp? (y/N)"
+	read reply
+	if [[ $reply == "y" ]]; then
+		ufw deny ftp
+	else
+		ufw allow ftp
+	fi
 	ufw enable
 	sysctl -n net.ipv4.tcp_syncookies
 else
 	ufw disable
+fi
+
+echo "Disable ssh? (y/N)"
+read replySSH
+if [[ $reply == "y" ]]; then
+	systemctl disable sshd
+	systemctl stop sshd
+else
+	echo "Disable sftp? (y/N)"
+	read reply 
+	if [[ $reply == "y" ]]; then
+		sed -i -E "s/.*Subsystem sftp \/usr\/lib\/openssh\/sftp-server/Subsystem sftp \/usr\/lib\/openssh\/sftp-server/" /etc/ssh/sshd_config
+		/etc/init.d/sshd restart
+	fi
 fi
 
 echo "New sources.list? (y/N)"
@@ -195,13 +216,57 @@ read reply
 if [[ $reply == "y" ]]; then
 	apt-get install curl -y
 	if lsb_release -a | grep "12.04" > /dev/null; then
-		curl https://repogen.simplylinux.ch/txt/precise/sources_bba61f3485a81e38a79ac3f6ecc2b76c6a9badbe.txt | sudo tee /etc/apt/sources.list
+		#curl https://repogen.simplylinux.ch/txt/precise/sources_bba61f3485a81e38a79ac3f6ecc2b76c6a9badbe.txt | sudo tee /etc/apt/sources.list
+		echo "#------------------------------------------------------------------------------#
+#                            OFFICIAL UBUNTU REPOS                             #
+#------------------------------------------------------------------------------#
+
+
+###### Ubuntu Main Repos
+deb http://us.archive.ubuntu.com/ubuntu/ precise main restricted universe multiverse 
+
+###### Ubuntu Update Repos
+deb http://us.archive.ubuntu.com/ubuntu/ precise-security main restricted universe multiverse 
+deb http://us.archive.ubuntu.com/ubuntu/ precise-updates main restricted universe multiverse " > /etc/apt/sources.list
 	elif lsb_release -a | grep "14.04" > /dev/null; then
-		curl https://repogen.simplylinux.ch/txt/yakkety/sources_024c14347186a4e6e152f4457d7e66bec553bc8d.txt | sudo tee /etc/apt/sources.list
+		#curl https://repogen.simplylinux.ch/txt/trusty/sources_04cd96683719547cc4c2f8b716281ead2836f0ef.txt | sudo tee /etc/apt/sources.list
+		echo "#------------------------------------------------------------------------------#
+#                            OFFICIAL UBUNTU REPOS                             #
+#------------------------------------------------------------------------------#
+
+
+###### Ubuntu Main Repos
+deb http://us.archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse 
+
+###### Ubuntu Update Repos
+deb http://us.archive.ubuntu.com/ubuntu/ trusty-security main restricted universe multiverse 
+deb http://us.archive.ubuntu.com/ubuntu/ trusty-updates main restricted universe multiverse " > /etc/apt/sources.list
 	elif lsb_release -a | grep "16.04" > /dev/null; then
-		curl https://repogen.simplylinux.ch/txt/xenial/sources_3dc5770f0c6f81ac011ad9525ef566915636d0be.txt | sudo tee /etc/apt/sources.list
+		#curl https://repogen.simplylinux.ch/txt/xenial/sources_3dc5770f0c6f81ac011ad9525ef566915636d0be.txt | sudo tee /etc/apt/sources.list
+		echo "#------------------------------------------------------------------------------#
+#                            OFFICIAL UBUNTU REPOS                             #
+#------------------------------------------------------------------------------#
+
+
+###### Ubuntu Main Repos
+deb http://us.archive.ubuntu.com/ubuntu/ xenial main restricted universe multiverse 
+
+###### Ubuntu Update Repos
+deb http://us.archive.ubuntu.com/ubuntu/ xenial-security main restricted universe multiverse 
+deb http://us.archive.ubuntu.com/ubuntu/ xenial-updates main restricted universe multiverse " > /etc/apt/sources.list
 	elif lsb_release -a | grep "16.10" > /dev/null; then
-		curl https://repogen.simplylinux.ch/txt/yakkety/sources_024c14347186a4e6e152f4457d7e66bec553bc8d.txt | sudo tee /etc/apt/sources.list
+		#curl https://repogen.simplylinux.ch/txt/yakkety/sources_024c14347186a4e6e152f4457d7e66bec553bc8d.txt | sudo tee /etc/apt/sources.list
+		echo "#------------------------------------------------------------------------------#
+#                            OFFICIAL UBUNTU REPOS                             #
+#------------------------------------------------------------------------------#
+
+
+###### Ubuntu Main Repos
+deb http://us.archive.ubuntu.com/ubuntu/ yakkety main restricted universe multiverse 
+
+###### Ubuntu Update Repos
+deb http://us.archive.ubuntu.com/ubuntu/ yakkety-security main restricted universe multiverse 
+deb http://us.archive.ubuntu.com/ubuntu/ yakkety-updates main restricted universe multiverse " > /etc/apt/sources.list
 	fi
 fi
 
