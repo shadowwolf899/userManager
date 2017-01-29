@@ -170,7 +170,8 @@ if [[ $reply == "y" ]]; then
 		sed -i -E "s/Update-Package-Lists.*/Update-Package-Lists \"1\"\;/" /etc/apt/apt.conf.d/10periodic
 		sed -i -E "s/Download-Upgradeable-Packages.*/Download-Upgradeable-Packages \"1\"\;/" /etc/apt/apt.conf.d/10periodic
 	else
-		echo "I don't know how"
+		echo "APT::Periodic::Update-Package-Lists \"1\"" >> /etc/apt/apt.conf.d/10periodic
+		echo "APT::Periodic::Download-Upgradeable-Packages \"1\"" >> /etc/apt/apt.conf.d/10periodic
 	fi
 fi
 
