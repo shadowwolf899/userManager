@@ -10,70 +10,74 @@ else
 	echo "You should run this in tmux, else you will lose your progress"
 	exit 2
 fi
-echo "USERS:"
-./listusers
-echo
-echo "Type admins:"
-while [ -z "$finAD" ] 
-do
-	read tempA
-	if [ -z "$tempA" ]; then
-		finAD="Done"
-	else
-		authAdmins[${#authAdmins[*]}]=$tempA
-	fi
-done
-echo
-echo "Type users:"
-while [ -z "$finU" ]
-do
-	read tempA
-	if [ -z "$tempA" ]; then
-		finU="Done"
-	else
-		authUsers[${#authUsers[*]}]=$tempA
-	fi
-done
 
-for i in $(cat users.txt); do
-	if echo ${authUsers[*]} | grep $i > /dev/null || echo ${authAdmins[*]} | grep $i > /dev/null; then
-		echo "$i AUTHORIZED"
-	else
-		echo "DELETE $i (y/N):"
-		read reply
-		if [[ $reply == "y" ]]; then
-			userdel $i
-			groupdel $i
+echo "Configure user accounts?(y/N) "
+read reply
+if [[ $reply == "y" ]]; then
+	echo "USERS:"
+	./listusers
+	echo
+	echo "Type admins:"
+	while [ -z "$finAD" ] 
+	do
+		read tempA
+		if [ -z "$tempA" ]; then
+			finAD="Done"
+		else
+			authAdmins[${#authAdmins[*]}]=$tempA
 		fi
-	fi
-done
-
-for i in ${authUsers[*]}; do
-	if echo $(cat users.txt) | grep $i > /dev/null; then
-		echo "$i AUTHORIZED" > /dev/null
-	else
-		echo "MAKE $i? (y/N)"
-		read reply
-		if [[ $reply == "y" ]]; then
-			useradd $i
+	done
+	echo
+	echo "Type users:"
+	while [ -z "$finU" ]
+	do
+		read tempA
+		if [ -z "$tempA" ]; then
+			finU="Done"
+		else
+			authUsers[${#authUsers[*]}]=$tempA
 		fi
-	fi
-done
+	done
 
-for i in ${authAdmins[*]}; do
-	if echo $(cat users.txt) | grep $i > /dev/null; then
-		echo "$i AUTHORIZED" > /dev/null
-	else
-		echo "MAKE $i (admin)? (y/N)"
-		read reply
-		if [[ $reply == "y" ]]; then
-			useradd $i
-			usermod -a -G sudo $i
-			usermod -a -G wheel $i
+	for i in $(cat users.txt); do
+		if echo ${authUsers[*]} | grep $i > /dev/null || echo ${authAdmins[*]} | grep $i > /dev/null; then
+			echo "$i AUTHORIZED"
+		else
+			echo "DELETE $i (y/N):"
+			read reply
+			if [[ $reply == "y" ]]; then
+				userdel $i
+				groupdel $i
+			fi
 		fi
-	fi
-done
+	done
 
+	for i in ${authUsers[*]}; do
+		if echo $(cat users.txt) | grep $i > /dev/null; then
+			echo "$i AUTHORIZED" > /dev/null
+		else
+			echo "MAKE $i? (y/N)"
+			read reply
+			if [[ $reply == "y" ]]; then
+				useradd $i
+			fi
+		fi
+	done
+
+	for i in ${authAdmins[*]}; do
+		if echo $(cat users.txt) | grep $i > /dev/null; then
+			echo "$i AUTHORIZED" > /dev/null
+		else
+			echo "MAKE $i (admin)? (y/N)"
+			read reply
+			if [[ $reply == "y" ]]; then
+				useradd $i
+				usermod -a -G sudo $i
+				usermod -a -G wheel $i
+			fi
+		fi
+	done
+fi
 echo "Change passwords? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
