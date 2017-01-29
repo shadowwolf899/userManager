@@ -214,7 +214,6 @@ fi
 echo "New sources.list? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
-	apt-get install curl -y
 	if lsb_release -a | grep "12.04" > /dev/null; then
 		#curl https://repogen.simplylinux.ch/txt/precise/sources_bba61f3485a81e38a79ac3f6ecc2b76c6a9badbe.txt | sudo tee /etc/apt/sources.list
 		echo "#------------------------------------------------------------------------------#
