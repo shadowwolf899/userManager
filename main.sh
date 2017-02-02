@@ -273,15 +273,15 @@ deb http://us.archive.ubuntu.com/ubuntu/ yakkety-security main restricted univer
 deb http://us.archive.ubuntu.com/ubuntu/ yakkety-updates main restricted universe multiverse " > /etc/apt/sources.list
 	elif lsb_release -a | grep "wheezy" > /dev/null; then
 		echo "#------------------------------------------------------------------------------#
-		#                   OFFICIAL DEBIAN REPOS                    
-		#------------------------------------------------------------------------------#
+#                   OFFICIAL DEBIAN REPOS                    
+#------------------------------------------------------------------------------#
 
-		###### Debian Main Repos
-		deb http://ftp.us.debian.org/debian/ wheezy main contrib non-free 
+###### Debian Main Repos
+deb http://ftp.us.debian.org/debian/ wheezy main contrib non-free 
 
-		###### Debian Update Repos
-		deb http://security.debian.org/ wheezy/updates main contrib non-free 
-		deb http://ftp.us.debian.org/debian/ wheezy-proposed-updates main contrib non-free " > /etc/apt/sources.list
+###### Debian Update Repos
+deb http://security.debian.org/ wheezy/updates main contrib non-free 
+deb http://ftp.us.debian.org/debian/ wheezy-proposed-updates main contrib non-free " > /etc/apt/sources.list
 	fi
 fi
 
