@@ -1,14 +1,18 @@
 #!/bin/bash
 if [ "$EUID" -ne 0 ]
-  then echo "Please run as root"
-  exit 1
+	then echo "Please run as root"
+	exit 1
 fi
 
 if echo $TERM | grep "screen" > /dev/null; then
 	echo "All good" > /dev/null
 else
-	echo "You should run this in tmux, else you will lose your progress"
-	exit 2
+	echo "You should run this in tmux, else you may lose your progress"
+	echo "Continue anyways?(Y/n) "
+	read reply
+	if [[ $reply == "n" ]]; then
+		exit 2
+	fi
 fi
 
 echo "Configure user accounts?(y/N) "
