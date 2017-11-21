@@ -34,7 +34,6 @@ echo "Configure user accounts?(y/N) "
 read reply
 if [[ $reply == "y" ]]; then
 	echo "USERS:"
-	#./listusers
 	listUsers
 	echo
 	echo "Type admins:"
