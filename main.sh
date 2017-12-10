@@ -22,7 +22,7 @@ fi
 if echo $TERM | grep "screen" > /dev/null; then
 	echo "All good" > /dev/null
 else
-	echo "You should run this in tmux, else you may lose your progress"
+	echo "You should run this in something like tmux, else you may lose your progress"
 	echo "Continue anyways?(Y/n) "
 	read reply
 	if [[ $reply == "n" ]]; then
@@ -97,6 +97,7 @@ if [[ $reply == "y" ]]; then
 		fi
 	done
 fi
+
 echo "Change passwords? (y/N)"
 read reply
 if [[ $reply == "y" ]]; then
@@ -104,12 +105,12 @@ if [[ $reply == "y" ]]; then
 	read reply
 	if [[ $reply == "y" ]]; then
 		for i in ${authAdmins[*]}; do
-			echo $i
+			echo "Enter password for $i: "
 			read pass
 			echo $i:$pass | chpasswd
 		done
 		for i in ${authUsers[*]}; do
-			echo $i
+			echo "Enter password for $i: "
 			read pass
 			echo $i:$pass | chpasswd
 		done
@@ -221,8 +222,8 @@ else
 	ufw disable
 fi
 
-echo "Disable ssh? (y/N)"
-read replySSH
+echo "Disable sshd? (y/N)"
+read reply
 if [[ $reply == "y" ]]; then
 	systemctl disable sshd
 	systemctl stop sshd
@@ -301,6 +302,8 @@ deb http://ftp.us.debian.org/debian/ wheezy main contrib non-free
 ###### Debian Update Repos
 deb http://security.debian.org/ wheezy/updates main contrib non-free 
 deb http://ftp.us.debian.org/debian/ wheezy-proposed-updates main contrib non-free " > /etc/apt/sources.list
+	else 
+		echo "OS not recognized"
 	fi
 fi
 
